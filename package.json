@@ -1,0 +1,23 @@
+{
+  "name": "gregers.no",
+  "version": "0.0.1-1",
+  "author": "Gregers Rygg <gregersrygg@gmail.com>",
+  "description": "The code powering gregers.no",
+  "main": "./lib/server.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gregersrygg/gregers.no.git"
+  },
+  "dependencies": {
+    "connect": 	"2.6.0",
+    "nano":		"3.3.3"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=0.6"
+  },
+  "subdomain": "gregers.no",
+  "scripts": {
+    "start": "./libs/server.js"
+  }
+}
