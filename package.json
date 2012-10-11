@@ -17,6 +17,10 @@
     "node": ">=0.6"
   },
   "subdomain": "gregers.no",
+  "domains": [
+    "gregers.no",
+    "www.gregers.no"
+  ],
   "scripts": {
     "start": "./libs/server.js"
   }
