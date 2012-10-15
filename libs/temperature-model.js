@@ -15,7 +15,7 @@ db.get("_design/temperature", function (err, body) {
   if (err && err.error === 'not_found') {
     createViews();
   } else if (err) {
-    log.error("Couldn't get views from DB");
+    console.error("Couldn't get views from DB");
     throw err;
   } else {
     destroyViews(body._rev);
@@ -32,9 +32,10 @@ function destroyViews(rev) {
 function createViews () {
   var mapTemp = function (doc) {
     if (doc.temp && doc.time) {
-      emit(null, {
+      emit(doc.name || 'unknown', {
         temp: doc.temp,
-        time: doc.time
+        time: doc.time,
+        name: doc.name
       });
     }
   };
@@ -43,15 +44,26 @@ function createViews () {
     "views": {
       "last": {
         "map":  mapTemp,
-        "reduce": function (keys, values) {
-        	var latest, latestTime = 0;
-        	values.forEach(function (data) {
-        		if (data.time > latestTime) {
-        			latestTime = data.time;
-        			latest = data;
-        		}
+        "reduce": function (keys, values, rereduce) {
+        	var latest = {}, latestTime = {}, arr = [];
+
+          values.forEach(function (data, i) {
+            var name = (rereduce ? data.name : keys[i][0]);
+            if (!latest[name] || data.time > latestTime[name]) {
+              if (!data.name) {
+                data.name = name;
+              }
+              latestTime[name] = data.time;
+              latest[name] = data;
+            }
         	});
-        	return latest;
+
+          for (var key in latest) {
+            log("REDUCE " + key);
+            arr.push(latest[key]);
+          }
+
+        	return arr;
         }
       },
       "stats": {

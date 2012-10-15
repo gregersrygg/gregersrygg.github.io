@@ -16,9 +16,12 @@ var app = connect()
       model.create(req.body);
       res.end("");
     } else if ("GET" === req.method && "/temperature" === req.url) {
-      model.last(function (data) {
-        console.log("LAST TEMPERATURE", data);
-        res.end("Last temperature: " + data.temp + "C " + new Date(data.time));
+      model.last(function (arr) {
+        arr.forEach(function (data) {
+          console.log("LAST TEMPERATURE", data);
+          res.write("Last temperature " + data.name + ": " + data.temp + "C " + new Date(data.time)+"\n");
+        });
+        res.end();
       });
     } else if ("GET" === req.method && "/temperature-stats" === req.url) {
       model.stats(function (data) {
