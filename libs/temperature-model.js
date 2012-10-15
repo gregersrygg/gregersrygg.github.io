@@ -1,6 +1,6 @@
 var db = require('nano')({
-    //"url":  "http://nodejitsudb496426227801.iriscouch.com:5984/gregers_no",
-    "url":  "http://127.0.0.1:5984/gregers_no",
+    "url":  "http://nodejitsudb496426227801.iriscouch.com:5984/gregers_no",
+    //"url":  "http://127.0.0.1:5984/gregers_no",
     "log":  function (id, args) {
       console.log("DB gregers_no:", id, args);
     }
