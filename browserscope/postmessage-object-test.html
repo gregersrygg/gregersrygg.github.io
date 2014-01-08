@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Test if postMessage can only send strings or </title>
+</head>
+<body>
+<p>postMessage can send messages between frames, windows and web workers. This page tests what your browser is capable of sending with postMessage.</p>
+
+<script>
+var _bTestResults = {};
+
+(function (win, doc) {
+	var asyncTests = [sendObject, sendNumber, sendDate, sendBlob];
+	var iframeWin;
+	win.setIframeWin = function (win) {
+		iframeWin = win;
+		runTests();
+	};
+	var iframeContent = '<!DOCTYPE html><scr'+'ipt>parent.setIframeWin(this);</scr'+'ipt>';
+	var iframe = doc.createElement('iframe');
+	iframe.style.border = iframe.style.width = iframe.style.height = 0;
+	doc.body.appendChild(iframe);
+	var iDoc = iframe.contentWindow.document;
+	iDoc.open('text/html', 'replace');
+	iDoc.write(iframeContent);
+	iDoc.close();
+
+	function listenOnce (fn) {
+		function callback (evt) {
+			if (win.removeEventListener) {
+				removeEventListener('message', callback ,false);
+			} else if (win.detachEvent) {
+				detachEvent('onmessage', callback);
+			}
+			fn(evt.data);
+		}
+		if (win.addEventListener) {
+			addEventListener('message', callback, false);
+		} else if (win.attachEvent) {
+			attachEvent('onmessage', callback);
+		}
+	}
+
+	function runTests () {
+		_bTestResults.only_strings = onlyStrings();
+		runNext();
+	}
+
+	function runNext () {
+		if (asyncTests.length > 0) {
+			var next = asyncTests.shift();
+			next(runNext);
+		} else {
+			postResults();
+		}
+
+	}
+
+	function onlyStrings () {
+		var onlyStrings = false;
+		try {
+		    win.postMessage({
+		        toString: function () {
+		            onlyStrings = true;
+		        }
+		    }, "*");
+		} catch (e) {}
+
+		return onlyStrings;
+	}
+
+	function sendObject (done) {
+		listenOnce(function (message) {
+			_bTestResults.object_sent = (typeof message == 'object');
+			done();
+		});
+		iframeWin.top.postMessage({foo: 'bar'}, '*');
+	}
+
+	function sendNumber (done) {
+		listenOnce(function (message) {
+			_bTestResults.number_sent = (message === 5);
+			done();
+		});
+		iframeWin.top.postMessage(5, '*');
+	}
+
+	function sendDate (done) {
+		var date = new Date();
+		listenOnce(function (message) {
+			_bTestResults.date_sent = (message instanceof Date && 
+				date.getTime() == message.getTime());
+			done();
+		});
+		iframeWin.top.postMessage(date, '*');
+	}
+
+	function sendBlob (done) {
+		var supportsBlob = false, blob;
+		try {
+	      supportsBlob = !!new Blob();
+	    } catch (e) {}
+
+	    if (supportsBlob) {
+	    	blob = new Blob(['blob test'], {type : 'text/plain'});
+	    	listenOnce(function (message) {
+	    		_bTestResults.blob_sent = (message instanceof Blob &&
+	    			message.type == 'text/plain' && message.size == blob.size);
+	    		done();
+	    	});
+	    	iframeWin.top.postMessage(blob, '*');
+	    } else {
+	    	_bTestResults.blob_sent = false;
+	    	done();
+	    }
+	}
+
+	function postResults () {
+		console.log(_bTestResults);
+		// Beacon the results to Browserscope.
+		/*var testKey = 'CHANGE-THIS-TO-YOUR-TEST-KEY';
+	 	var script = doc.createElement('script'),
+		script.src = 'http://www.browserscope.org/user/beacon/' + testKey;
+	  	doc.body.appendChild(script);*/
+	}
+
+})(window, document);
+</script>
+</body>
+</html>
