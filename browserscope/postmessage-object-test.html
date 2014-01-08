@@ -17,12 +17,26 @@ var _bTestResults = {};
     var asyncTests;
     var iframeWin;
     var lastAddedListener;
+    var supportsPostMessage = 'postMessage' in window;
     win.setIframeWin = function (win) {
         iframeWin = win;
         runTests();
     };
 
     var async = {
+        'only_strings': function (done) {
+            var onlyStrings = false;
+            try {
+                win.postMessage({
+                    toString: function () {
+                        onlyStrings = true;
+                    }
+                }, '*');
+            } catch (e) {}
+
+            done(onlyStrings);
+        },
+
         'send_object': function (done) {
             listenOnce(function (message) {
                 done(typeof message == 'object');
@@ -181,7 +195,6 @@ var _bTestResults = {};
     }
 
     function runTests () {
-        _bTestResults.only_strings = onlyStrings();
         asyncTests = [];
         for (var key in async) {
             asyncTests.push(key);
@@ -215,19 +228,6 @@ var _bTestResults = {};
 
     }
 
-    function onlyStrings () {
-        var onlyStrings = false;
-        try {
-            win.postMessage({
-                toString: function () {
-                    onlyStrings = true;
-                }
-            }, '*');
-        } catch (e) {}
-
-        return onlyStrings;
-    }
-
     function postResults () {
         console.log(_bTestResults);
         // Beacon the results to Browserscope.
@@ -237,7 +237,14 @@ var _bTestResults = {};
         doc.body.appendChild(script);*/
     }
 
-    createIframe();
+    _bTestResults.supports_postmessage = supportsPostMessage;
+    if (supportsPostMessage) {
+        createIframe();
+    } else {
+        for (var key in async) {
+            _bTestResults[key] = false;
+        }
+    }
 
 })(window, document);
 </script>
