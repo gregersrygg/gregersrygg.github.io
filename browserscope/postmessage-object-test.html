@@ -10,8 +10,13 @@
 var _bTestResults = {};
 
 (function (win, doc) {
+    win.onerror = function (message, url, line) {
+        _bTestResults.error = ['ERROR ', 'line:', line, ' ', message].join('');
+        postResults();
+    };
     var asyncTests;
     var iframeWin;
+    var lastAddedListener;
     win.setIframeWin = function (win) {
         iframeWin = win;
         runTests();
@@ -24,12 +29,14 @@ var _bTestResults = {};
             });
             iframeWin.top.postMessage({foo: 'bar'}, '*');
         },
+
         'send_number': function (done) {
             listenOnce(function (message) {
                 done(message === 5);
             });
             iframeWin.top.postMessage(5, '*');
         },
+
         'send_date': function (done) {
             var date = new Date();
             listenOnce(function (message) {
@@ -38,12 +45,39 @@ var _bTestResults = {};
             });
             iframeWin.top.postMessage(date, '*');
         },
+
+        'send_array': function (done) {
+            listenOnce(function (message) {
+                done(message.length === 3 && message[2] === 3);
+            });
+            iframeWin.top.postMessage([1, 2, 3], '*');
+        },
+
+        'send_deep_object': function (done) {
+            var bar = {'a': 'b'};
+            listenOnce(function (message) {
+                done(typeof message == 'object' &&
+                    typeof message.foo == 'object' && message.foo.a === 'b');
+            });
+            iframeWin.top.postMessage({foo: bar}, '*');
+        },
+
+        'send_nested_array': function (done) {
+            var arr = [1, 2, 3];
+            listenOnce(function (message) {
+                done(message.length === 1 && message[0].length === 3 &&
+                    message[0][2] === 3);
+            });
+            iframeWin.top.postMessage([arr], '*');
+        },
+
         'send_blob': function (done) {
             var supportsBlob = false, blob;
             try {
               supportsBlob = !!new Blob();
             } catch (e) {}
 
+            _bTestResults.supports_blob = supportsBlob;
             if (supportsBlob) {
                 blob = new Blob(['blob test'], {type : 'text/plain'});
                 listenOnce(function (message) {
@@ -54,6 +88,64 @@ var _bTestResults = {};
             } else {
                 done(false);
             }
+        },
+
+        'send_arraybuffer': function (done) {
+            var supportsArrayBuffer = true;
+            var buf;
+            try {
+                buf = new ArrayBuffer(16);
+            } catch (e) {
+                supportsArrayBuffer = false;
+            }
+            _bTestResults.supports_arraybuffer = supportsArrayBuffer;
+            if (supportsArrayBuffer) {
+                listenOnce(function (message) {
+                    done(message && message.byteLength === 16);
+                });
+                iframeWin.top.postMessage(buf, '*');
+            } else {
+                done(false);
+            }
+        },
+
+        'send_pixel_data': function (done) {
+            var canvas = doc.createElement('canvas');
+            var supportsCanvas = !!(canvas.getContext && canvas.getContext('2d'));
+            _bTestResults.supports_canvas = supportsCanvas;
+            if (supportsCanvas) {
+                canvas.style.width = canvas.style.height = '10px';
+                var ctx = canvas.getContext('2d');
+                var imageData = ctx.getImageData(0, 0, 10, 10);
+                if (imageData) {
+                    listenOnce(function (message) {
+                        done(message && message.length > 0);
+                    });
+                    iframeWin.top.postMessage(imageData.data, '*');
+                } else {
+                    _bTestResults.no_canvas_pixel_data = true;
+                }
+            } else {
+                done(false);
+            }
+        },
+
+        'send_filelist': function (done) {
+            var supportsFileList = !!(window.FileList);
+            var f, files;
+            _bTestResults.supports_filelist = supportsFileList;
+            if (supportsFileList) {
+                f = document.createElement('input');
+                f.type = 'file';
+                f.multiple = true;
+                listenOnce(function (message) {
+                    done(message instanceof FileList && message.length === 0);
+                });
+                iframeWin.top.postMessage(f.files, '*');
+            } else {
+                done(false);
+            }
+
         }
     };
 
@@ -68,13 +160,16 @@ var _bTestResults = {};
         iDoc.close();
     }
 
+    function removeListener (fn) {
+        if (win.removeEventListener) {
+            removeEventListener('message', fn ,false);
+        } else if (win.detachEvent) {
+            detachEvent('onmessage', fn);
+        }
+    }
     function listenOnce (fn) {
         function callback (evt) {
-            if (win.removeEventListener) {
-                removeEventListener('message', callback ,false);
-            } else if (win.detachEvent) {
-                detachEvent('onmessage', callback);
-            }
+            removeListener(callback);
             fn(evt.data);
         }
         if (win.addEventListener) {
@@ -82,11 +177,15 @@ var _bTestResults = {};
         } else if (win.attachEvent) {
             attachEvent('onmessage', callback);
         }
+        lastAddedListener = callback;
     }
 
     function runTests () {
         _bTestResults.only_strings = onlyStrings();
-        asyncTests = Object.keys(async);
+        asyncTests = [];
+        for (var key in async) {
+            asyncTests.push(key);
+        }
         runNext();
     }
 
@@ -94,16 +193,20 @@ var _bTestResults = {};
         if (asyncTests.length > 0) {
             var next = asyncTests.shift();
             var test = async[next];
+            lastAddedListener = null;
             var didThrow = false;
             var onComplete = function (result) {
                 _bTestResults[next] = result;
-                _bTestResults[next + "_threw_error"] = didThrow;
+                _bTestResults[next + '_threw_error'] = didThrow;
                 runNext();
             };
             try {
                 test(onComplete);
             } catch (e) {
                 didThrow = true;
+                if (lastAddedListener) {
+                    removeListener(lastAddedListener);
+                }
                 onComplete(false);
             }
         } else {
@@ -119,7 +222,7 @@ var _bTestResults = {};
                 toString: function () {
                     onlyStrings = true;
                 }
-            }, "*");
+            }, '*');
         } catch (e) {}
 
         return onlyStrings;
