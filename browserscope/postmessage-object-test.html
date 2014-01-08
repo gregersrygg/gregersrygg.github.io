@@ -14,7 +14,7 @@ var _bTestResults = {};
         _bTestResults.error = ['ERROR ', 'line:', line, ' ', message].join('');
         postResults();
     };
-    var asyncTests;
+    var testQueue;
     var iframeWin;
     var lastAddedListener;
     var supportsPostMessage = 'postMessage' in window;
@@ -23,7 +23,7 @@ var _bTestResults = {};
         runTests();
     };
 
-    var async = {
+    var allTests = {
         'only_strings': function (done) {
             var onlyStrings = false;
             try {
@@ -195,17 +195,17 @@ var _bTestResults = {};
     }
 
     function runTests () {
-        asyncTests = [];
-        for (var key in async) {
-            asyncTests.push(key);
+        testQueue = [];
+        for (var key in allTests) {
+            testQueue.push(key);
         }
         runNext();
     }
 
     function runNext () {
-        if (asyncTests.length > 0) {
-            var next = asyncTests.shift();
-            var test = async[next];
+        if (testQueue.length > 0) {
+            var next = testQueue.shift();
+            var test = allTests[next];
             lastAddedListener = null;
             var didThrow = false;
             var onComplete = function (result) {
@@ -241,7 +241,7 @@ var _bTestResults = {};
     if (supportsPostMessage) {
         createIframe();
     } else {
-        for (var key in async) {
+        for (var key in allTests) {
             _bTestResults[key] = false;
         }
     }
