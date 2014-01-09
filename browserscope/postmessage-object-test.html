@@ -233,7 +233,7 @@ var runTests = (function (win, doc) {
         if (window.console) { console.log(_bTestResults); }
         // Beacon the results to Browserscope.
         var testKey = 'agt1YS1wcm9maWxlcnIRCxIEVGVzdBiAgIDE7qGDCQw';
-        var script = doc.createElement('script'),
+        var script = doc.createElement('script');
         script.src = 'http://www.browserscope.org/user/beacon/' + testKey;
         doc.body.appendChild(script);
     }
