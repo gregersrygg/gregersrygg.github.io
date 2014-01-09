@@ -88,6 +88,14 @@ var runTests = (function (win, doc) {
             iframeWin.top.postMessage([1, 2, 3], '*');
         },
 
+        'send_regexp': function (done) {
+            listenOnce(function (message) {
+                done(Object.prototype.toString.call(message) === '[object RegExp]' &&
+                    message.test('test') === true);
+            });
+            iframeWin.top.postMessage(/test/, '*');
+        },
+
         'send_deep_object': function (done) {
             var bar = {'a': 'b'};
             listenOnce(function (message) {
