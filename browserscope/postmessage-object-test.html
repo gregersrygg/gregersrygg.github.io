@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Test if postMessage can only send strings or </title>
+    <title>Test what postMessage can send as message</title>
 </head>
 <body>
+<h1>Test what postMessage can send as message</h1>
 <p>postMessage can send messages between frames, windows and web workers. This page tests what your browser is capable of sending with postMessage.</p>
+
+<script src="http://www.browserscope.org/ua?o=js"></script>
 
 <script>
 var _bTestResults = {};
 
-(function (win, doc) {
+var runTests = (function (win, doc) {
     win.onerror = function (message, url, line) {
         _bTestResults.error = ['ERROR ', 'line:', line, ' ', message].join('');
         postResults();
@@ -207,16 +210,14 @@ var _bTestResults = {};
             var next = testQueue.shift();
             var test = allTests[next];
             lastAddedListener = null;
-            var didThrow = false;
             var onComplete = function (result) {
                 _bTestResults[next] = result;
-                _bTestResults[next + '_threw_error'] = didThrow;
                 runNext();
             };
             try {
                 test(onComplete);
             } catch (e) {
-                didThrow = true;
+                _bTestResults[next + '_threw_error'] = e.message;
                 if (lastAddedListener) {
                     removeListener(lastAddedListener);
                 }
@@ -229,24 +230,29 @@ var _bTestResults = {};
     }
 
     function postResults () {
-        console.log(_bTestResults);
+        if (window.console) { console.log(_bTestResults); }
         // Beacon the results to Browserscope.
-        /*var testKey = 'CHANGE-THIS-TO-YOUR-TEST-KEY';
+        var testKey = 'agt1YS1wcm9maWxlcnIRCxIEVGVzdBiAgIDE7qGDCQw';
         var script = doc.createElement('script'),
         script.src = 'http://www.browserscope.org/user/beacon/' + testKey;
-        doc.body.appendChild(script);*/
+        doc.body.appendChild(script);
     }
 
     _bTestResults.supports_postmessage = supportsPostMessage;
-    if (supportsPostMessage) {
-        createIframe();
-    } else {
-        for (var key in allTests) {
-            _bTestResults[key] = false;
+    
+    return function () {
+        if (supportsPostMessage) {
+            createIframe();
+        } else {
+            for (var key in allTests) {
+                _bTestResults[key] = false;
+            }
         }
-    }
+    };
 
 })(window, document);
 </script>
+
+<script src="http://www.browserscope.org/user/tests/button?fn=runTests&btn_text=Run%20the%20test"></script>
 </body>
 </html>
