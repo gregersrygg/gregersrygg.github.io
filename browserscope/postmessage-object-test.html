@@ -162,7 +162,7 @@ var runTests = (function (win, doc) {
                 var imageData = ctx.getImageData(0, 0, 10, 10);
                 if (imageData) {
                     listenOnce(function (message) {
-                        done(message && message.length > 0);
+                        done(message && message.length > 0 && typeof message != 'string');
                     });
                     iframeWin.top.postMessage(imageData.data, '*');
                 } else {
