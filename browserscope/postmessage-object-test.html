@@ -13,6 +13,13 @@
 var _bTestResults = {};
 
 function postResults () {
+    var val;
+    for (var key in _bTestResults) {
+        val = _bTestResults[key];
+        if (typeof val == 'boolean') {
+            _bTestResults[key] = (val ? 1 : 0);
+        }
+    }
     if (window.console) { console.log(_bTestResults); }
     // Beacon the results to Browserscope.
     var testKey = 'agt1YS1wcm9maWxlcnIRCxIEVGVzdBiAgIDE7qGDCQw';
