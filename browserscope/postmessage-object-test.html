@@ -12,11 +12,21 @@
 <script>
 var _bTestResults = {};
 
+function postResults () {
+    if (window.console) { console.log(_bTestResults); }
+    // Beacon the results to Browserscope.
+    var testKey = 'agt1YS1wcm9maWxlcnIRCxIEVGVzdBiAgIDE7qGDCQw';
+    var script = document.createElement('script');
+    script.src = 'http://www.browserscope.org/user/beacon/' + testKey;
+    document.body.appendChild(script);
+}
+
+window.onerror = function (message, url, line) {
+    _bTestResults.error = ['ERROR ', 'line:', line, ' ', message].join('');
+    postResults();
+};
+
 var runTests = (function (win, doc) {
-    win.onerror = function (message, url, line) {
-        _bTestResults.error = ['ERROR ', 'line:', line, ' ', message].join('');
-        postResults();
-    };
     var testQueue;
     var iframeWin;
     var lastAddedListener;
@@ -148,7 +158,7 @@ var runTests = (function (win, doc) {
         },
 
         'send_filelist': function (done) {
-            var supportsFileList = !!(window.FileList);
+            var supportsFileList = !!(win.FileList);
             var f, files;
             _bTestResults.supports_filelist = supportsFileList;
             if (supportsFileList) {
@@ -227,15 +237,6 @@ var runTests = (function (win, doc) {
             postResults();
         }
 
-    }
-
-    function postResults () {
-        if (window.console) { console.log(_bTestResults); }
-        // Beacon the results to Browserscope.
-        var testKey = 'agt1YS1wcm9maWxlcnIRCxIEVGVzdBiAgIDE7qGDCQw';
-        var script = doc.createElement('script');
-        script.src = 'http://www.browserscope.org/user/beacon/' + testKey;
-        doc.body.appendChild(script);
     }
 
     _bTestResults.supports_postmessage = supportsPostMessage;
