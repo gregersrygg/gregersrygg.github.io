@@ -234,7 +234,7 @@ var runTests = (function (win, doc) {
             try {
                 test(onComplete);
             } catch (e) {
-                _bTestResults[next + '_threw_error'] = e.message;
+                _bTestResults[next + '_threw_error'] = 1;
                 if (lastAddedListener) {
                     removeListener(lastAddedListener);
                 }
