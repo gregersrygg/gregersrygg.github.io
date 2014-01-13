@@ -182,7 +182,11 @@ var runTests = (function (win, doc) {
                 done(false);
             }
 
-        }
+        },
+        
+        'DATA_CLONE_ERR_defined': function (done) {
+            done(win.DOMException && DOMException.DATA_CLONE_ERR === 25);
+        },
     };
 
     function createIframe () {
