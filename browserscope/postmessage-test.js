@@ -183,9 +183,9 @@ var runTests = (function (win, doc) {
             }
 
         },
-        
+
         'DATA_CLONE_ERR_defined': function (done) {
-            done(win.DOMException && DOMException.DATA_CLONE_ERR === 25);
+            done(!!win.DOMException && DOMException.DATA_CLONE_ERR === 25);
         },
     };
 
