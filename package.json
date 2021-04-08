@@ -9,7 +9,7 @@
     "url": "https://github.com/gregersrygg/gregers.no.git"
   },
   "dependencies": {
-    "connect": "2.6.0",
+    "connect": "2.8.1",
     "nano": "3.3.3"
   },
   "license": "MIT",
